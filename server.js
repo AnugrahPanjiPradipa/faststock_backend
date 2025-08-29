@@ -17,6 +17,10 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/logs', logRoutes);
 app.use('/api/auth', require('./routes/authRoutes'));
 
+app.get('/', (req, res) => {
+  res.send('✅ FastStock Backend is running...');
+});
+
 const startServer = async () => {
   try {
     await mongoose.connect(process.env.MONGO_URI);

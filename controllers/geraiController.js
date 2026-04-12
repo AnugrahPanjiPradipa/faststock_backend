@@ -1,9 +1,9 @@
 const Gerai = require("../models/Gerai");
 
-exports.gerai =  (req, res) => {
+exports.gerai = async (req, res) => {
   try {
-    const gerai = Gerai.find();
-    res.json(gerai);
+    const gerai = await Gerai.find();
+    req.json(gerai);
   } catch (err) {
     res.status(500).json({ message: "Gagal mengambil data gerai" });
   }

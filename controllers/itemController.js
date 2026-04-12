@@ -202,7 +202,7 @@ exports.updateItem = async (req, res) => {
   session.startTransaction();
   try {
     const { id } = req.params;
-    const { name, addStockGudang } = req.body;
+    const { name, addStockGudang, asal } = req.body;
 
     const item = await Item.findById(id).session(session);
     if (!item) {
@@ -249,7 +249,7 @@ exports.updateItem = async (req, res) => {
               itemName: name || item.name,
               type: tambahan > 0 ? "input" : "pengurangan",
               jumlah: Math.abs(tambahan),
-              asal: req.body.asal,
+              asal: asal,
             },
           ],
           { session },

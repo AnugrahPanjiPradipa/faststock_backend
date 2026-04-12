@@ -1,13 +1,14 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const logSchema = new mongoose.Schema(
   {
-    itemId: { type: mongoose.Schema.Types.ObjectId, ref: 'Item' },
+    itemId: { type: mongoose.Schema.Types.ObjectId, ref: "Item" },
     itemName: String,
-    type: { type: String, enum: ['input', 'mutasi', 'penjualan'] },
+    type: { type: String, enum: ["input", "mutasi", "penjualan"] },
     jumlah: Number,
+    gerai: String,
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-module.exports = mongoose.model('Log', logSchema);
+module.exports = mongoose.model("Log", logSchema);

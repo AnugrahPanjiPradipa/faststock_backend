@@ -16,6 +16,8 @@ app.use('/api/logs', require('./routes/logRoutes'));
 app.use('/uploads', express.static('uploads'));
 app.use('/api/logs', logRoutes);
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/gerai', require('./routes/geraiRoutes'));
+
 
 app.get('/', (req, res) => {
   res.send('✅ FastStock Backend is running...');

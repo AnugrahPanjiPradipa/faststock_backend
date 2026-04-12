@@ -7,7 +7,7 @@ exports.createItem = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const { name, stockGudang = 0 } = req.body;
+    const { name, stockGudang = 0, asal } = req.body;
 
     const newItem = await Item.create(
       [
@@ -15,6 +15,7 @@ exports.createItem = async (req, res) => {
           name,
           stockGudang: Number(stockGudang),
           stockEtalase: 0,
+          asal: asal,
         },
       ],
       { session },
@@ -31,6 +32,7 @@ exports.createItem = async (req, res) => {
             itemName: item.name,
             type: "input",
             jumlah: item.stockGudang,
+            asal: asal,
           },
         ],
         { session },
@@ -47,6 +49,8 @@ exports.createItem = async (req, res) => {
     console.error("createItem error:", err);
     res.status(500).json({ message: "Gagal tambah item", error: err.message });
   }
+
+  console.log("BODY:", req.body);
 };
 
 // GET items with pagination and optional search
@@ -245,7 +249,7 @@ exports.updateItem = async (req, res) => {
               itemName: name || item.name,
               type: tambahan > 0 ? "input" : "pengurangan",
               jumlah: Math.abs(tambahan),
-              gerai: req.body.gerai,
+              asal: req.body.asal,
             },
           ],
           { session },

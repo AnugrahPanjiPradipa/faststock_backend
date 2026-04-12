@@ -5,8 +5,8 @@ const logSchema = new mongoose.Schema(
     itemId: { type: mongoose.Schema.Types.ObjectId, ref: "Item" },
     itemName: String,
     type: { type: String, enum: ["input", "mutasi", "penjualan"] },
+    asal: String,
     jumlah: Number,
-    gerai: String,
   },
   { timestamps: true },
 );

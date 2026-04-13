@@ -52,6 +52,7 @@ exports.exportLogsToExcel = async (req, res) => {
     { header: 'Item', key: 'itemName', width: 25 },
     { header: 'Jenis', key: 'type', width: 15 },
     { header: 'Asal', key: 'asal', width: 15 },
+    { header: 'Transfer', key: 'transfer', width: 15 },
     { header: 'Jumlah', key: 'jumlah', width: 10 },
   ];
 
@@ -61,6 +62,7 @@ logs.forEach((log) => {
       itemName: log.itemName || "-",
       type: log.type || "-",
       asal: log.asal || "-", 
+      transfer: log.transfer || "-", 
       jumlah: log.jumlah || 0,
     });
   });
@@ -82,7 +84,6 @@ exports.deleteLogsByDate = async (req, res) => {
   const start = new Date(date);
   const end = new Date(date);
   end.setDate(end.getDate() + 1);
-
   try {
     const result = await Log.deleteMany({
       createdAt: { $gte: start, $lt: end },
@@ -107,9 +108,14 @@ exports.deleteLogAndRollback = async (req, res) => {
 
     const item = await Item.findById(log.itemId);
     if (!item) {
-      await log.deleteOne(); // kalau item udah gak ada, tetap hapus log
+      await log.deleteOne(); 
       return res.status(404).json({ message: 'Item tidak ditemukan, log dihapus' });
     }
+
+    if (type === "transfer" && item.stockGudang < jumlah) {
+  return res.status(400).json({ message: "Stok gudang tidak cukup" });
+}
+
 
     // 🔁 Rollback stok berdasarkan tipe log
     switch (log.type) {
@@ -123,6 +129,9 @@ exports.deleteLogAndRollback = async (req, res) => {
       case 'penjualan':
         item.stockEtalase += log.jumlah;
         break;
+        case "transfer":
+  item.stockGudang += log.jumlah; // rollback transfer = stok gudang dikembalikan
+  break;
       default:
         break;
     }
@@ -160,6 +169,7 @@ exports.updateLogAndAdjustStock = async (req, res) => {
 
     const item = await Item.findById(itemId || log.itemId);
     if (!item) return res.status(404).json({ message: 'Item tidak ditemukan' });
+    
 
     // 1️⃣ Rollback stok lama sesuai log lama
     if (log.type === 'input') {
@@ -170,6 +180,8 @@ exports.updateLogAndAdjustStock = async (req, res) => {
     } else if (log.type === 'penjualan') {
       item.stockEtalase += log.jumlah;
     }
+     if (type === "transfer" && item.stockGudang < jumlah) {
+  return res.status(400).json({ message: "Stok gudang tidak cukup" });}
 
     // 2️⃣ Validasi stok sebelum update
     if (type === 'mutasi' && item.stockGudang < jumlah) {
@@ -178,6 +190,9 @@ exports.updateLogAndAdjustStock = async (req, res) => {
     if (type === 'penjualan' && item.stockEtalase < jumlah) {
       return res.status(400).json({ message: 'Stok etalase tidak cukup' });
     }
+    if (type === "transfer" && item.stockGudang < jumlah) {
+  return res.status(400).json({ message: "Stok gudang tidak cukup" });
+}
 
     // 3️⃣ Terapkan stok baru sesuai log baru
     if (type === 'input') {
@@ -188,15 +203,20 @@ exports.updateLogAndAdjustStock = async (req, res) => {
     } else if (type === 'penjualan') {
       item.stockEtalase -= jumlah;
     }
+    else if (type === "transfer") {
+  item.stockGudang -= jumlah;
+}
 
     // 4️⃣ Simpan perubahan log
-    log.itemId = itemId || log.itemId;
-    log.itemName = itemName || log.itemName;
-    log.type = type || log.type;
-    log.jumlah = jumlah || log.jumlah;
+log.itemId = itemId ?? log.itemId;
+log.itemName = itemName ?? log.itemName;
+log.type = type ?? log.type;
+log.jumlah = jumlah ?? log.jumlah;
+log.asal = asal ?? log.asal;
+log.tujuan = tujuan ?? log.tujuan;
 
-    await item.save();
-    await log.save();
+await item.save();
+await log.save();
 
     // 5️⃣ Jika stok semua habis, hapus item
     if (item.stockGudang <= 0 && item.stockEtalase <= 0) {

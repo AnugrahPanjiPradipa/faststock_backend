@@ -52,7 +52,7 @@ exports.exportLogsToExcel = async (req, res) => {
     { header: 'Item', key: 'itemName', width: 25 },
     { header: 'Jenis', key: 'type', width: 15 },
     { header: 'Asal', key: 'asal', width: 15 },
-    { header: 'Transfer', key: 'transfer', width: 15 },
+    { header: 'Tujuan', key: 'tujuan', width: 15 },
     { header: 'Jumlah', key: 'jumlah', width: 10 },
   ];
 
@@ -62,7 +62,7 @@ logs.forEach((log) => {
       itemName: log.itemName || "-",
       type: log.type || "-",
       asal: log.asal || "-", 
-      transfer: log.transfer || "-", 
+      tujuan: log.tujuan || "-", 
       jumlah: log.jumlah || 0,
     });
   });
@@ -112,10 +112,6 @@ exports.deleteLogAndRollback = async (req, res) => {
       return res.status(404).json({ message: 'Item tidak ditemukan, log dihapus' });
     }
 
-    if (type === "transfer" && item.stockGudang < jumlah) {
-  return res.status(400).json({ message: "Stok gudang tidak cukup" });
-}
-
 
     // 🔁 Rollback stok berdasarkan tipe log
     switch (log.type) {
@@ -133,7 +129,9 @@ exports.deleteLogAndRollback = async (req, res) => {
   item.stockGudang += log.jumlah; // rollback transfer = stok gudang dikembalikan
   break;
       default:
-        break;
+        case "pengurangan":
+  item.stockGudang += log.jumlah;
+  break;
     }
 
     // Jangan sampai minus stok
@@ -161,7 +159,7 @@ exports.deleteLogAndRollback = async (req, res) => {
 
 exports.updateLogAndAdjustStock = async (req, res) => {
   const { id } = req.params;
-  const { itemId, itemName, type, jumlah } = req.body;
+ const { itemId, itemName, type, jumlah, asal, tujuan } = req.body;
 
   try {
     const log = await Log.findById(id);

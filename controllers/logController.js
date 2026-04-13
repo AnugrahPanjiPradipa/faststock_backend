@@ -27,7 +27,7 @@ exports.getLogs = async (req, res) => {
 
 // GET /api/logs/export?date=2025-08-05
 exports.exportLogsToExcel = async (req, res) => {
-  const { date } = req.query;
+  const { date, type } = req.query;
   let filter = {};
 
   if (date) {
@@ -36,6 +36,10 @@ exports.exportLogsToExcel = async (req, res) => {
     end.setDate(end.getDate() + 1);
     filter.createdAt = { $gte: start, $lt: end };
   }
+
+  if (type && type !== 'all') {
+  filter.type = type;
+}
 
   const logs = await Log.find(filter).sort({ createdAt: -1 });
 
@@ -46,17 +50,21 @@ exports.exportLogsToExcel = async (req, res) => {
     { header: 'Tanggal', key: 'createdAt', width: 20 },
     { header: 'Item', key: 'itemName', width: 25 },
     { header: 'Jenis', key: 'type', width: 15 },
+    { header: 'Asal', key: 'asal', width: 15 },
     { header: 'Jumlah', key: 'jumlah', width: 10 },
   ];
 
-  logs.forEach((log) => {
+logs.forEach((log) => {
     sheet.addRow({
-      createdAt: log.createdAt.toISOString().slice(0, 16).replace('T', ' '),
-      itemName: log.itemName,
-      type: log.type,
-      jumlah: log.jumlah,
+      createdAt: log.createdAt ? dayjs(log.createdAt).format("YYYY-MM-DD HH:mm") : "-",
+      itemName: log.itemName || "-",
+      type: log.type || "-",
+      asal: log.asal || "-", 
+      jumlah: log.jumlah || 0,
     });
   });
+
+  sheet.getRow(1).font = { bold: true };
 
   res.setHeader('Content-Disposition', `attachment; filename=log-${date || 'all'}.xlsx`);
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

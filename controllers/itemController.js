@@ -300,3 +300,72 @@ exports.deleteItem = async (req, res) => {
     res.status(500).json({ error: "Gagal menghapus item" });
   }
 };
+
+exports.transferGudang = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { id } = req.params;
+    const jumlah = Number(req.body.jumlah);
+    const tujuan = req.body.tujuan;
+
+    if (!Number.isFinite(jumlah) || jumlah <= 0) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: "Jumlah tidak valid" });
+    }
+
+    if (!tujuan) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: "Tujuan gerai wajib dipilih" });
+    }
+
+    const item = await Item.findById(id).session(session);
+    if (!item) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(404).json({ error: "Item tidak ditemukan" });
+    }
+
+    if (item.stockGudang < jumlah) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(400).json({ error: "Stok gudang tidak cukup" });
+    }
+
+    // kurangi stok gudang saja
+    await Item.updateOne(
+      { _id: id },
+      { $inc: { stockGudang: -jumlah } },
+      { session }
+    );
+
+    // simpan log transfer
+    await Log.create(
+      [
+        {
+          itemId: item._id,
+          itemName: item.name,
+          type: "transfer",
+          jumlah,
+          asal: item.asal,
+          tujuan: tujuan,
+        },
+      ],
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
+
+    const updated = await Item.findById(id);
+    res.json(updated);
+  } catch (err) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("transferGudang error:", err);
+    res.status(500).json({ error: "Gagal transfer stok", detail: err.message });
+  }
+};

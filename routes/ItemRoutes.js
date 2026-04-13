@@ -14,5 +14,6 @@ router.put("/:id", itemController.updateItem);
 router.put("/mutasi/:id", itemController.mutasiGudang);
 router.put("/penjualan/:id", itemController.penjualan);
 router.delete("/:id", itemController.deleteItem);
+router.put("/transfer/:id", itemController.transferGudang);
 
 module.exports = router;

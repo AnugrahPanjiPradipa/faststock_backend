@@ -6,6 +6,7 @@ const logSchema = new mongoose.Schema(
     itemName: String,
     type: { type: String, enum: ["input", "mutasi", "penjualan"] },
     asal: String,
+    tujuan: String,
     jumlah: Number,
   },
   { timestamps: true },

@@ -350,7 +350,6 @@ exports.transferGudang = async (req, res) => {
           itemName: item.name,
           type: "transfer",
           jumlah,
-          asal: item.asal,
           tujuan: tujuan,
         },
       ],
